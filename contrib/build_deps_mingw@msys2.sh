@@ -74,7 +74,7 @@ pacman --needed --noconfirm -S \
     base-devel \
     autotools \
     mingw-w64-x86_64-toolchain \
-    mingw-w64-x86_64-jq \
+    jq \
     mingw-w64-${BUILD_ARCH}-gcc \
     mingw-w64-${BUILD_ARCH}-make \
     mingw-w64-${BUILD_ARCH}-gnutls \
