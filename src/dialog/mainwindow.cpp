@@ -18,6 +18,8 @@
  */
 
 #include "mainwindow.h"
+#include "GatewayDialog.h"
+#include <QScopedValueRollback>
 #include "NewProfileDialog.h"
 #include "config.h"
 #include "editdialog.h"
@@ -98,6 +100,16 @@ MainWindow::MainWindow(QWidget* parent, bool useTray, const QString profileName)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    auto* gatewayMenu = menuBar()->addMenu(tr("Servers"));
+    m_autoGatewayAction = gatewayMenu->addAction(tr("Automatically select before connecting"));
+    m_autoGatewayAction->setCheckable(true);
+    m_autoGatewayAction->setChecked(OcSettings().value("automatic_gateway_selection", false).toBool());
+    connect(m_autoGatewayAction, &QAction::toggled, this, [](bool enabled) {
+        OcSettings().setValue("automatic_gateway_selection", enabled);
+    });
+    auto* chooseAction = gatewayMenu->addAction(tr("Probe and choose server..."));
+    connect(chooseAction, &QAction::triggered, this, [this]() { chooseGateway(false); });
 
     connect(ui->viewLogButton, &QPushButton::clicked,
         this, &MainWindow::createLogDialog);
@@ -744,6 +756,12 @@ void MainWindow::on_disconnectClicked()
 
 void MainWindow::on_connectClicked()
 {
+    if (m_choosingGateway)
+        return;
+    if (m_autoGatewayAction->isChecked() && !m_selectedGateway) {
+        chooseGateway(true);
+        return;
+    }
     VpnInfo* vpninfo = nullptr;
     StoredServer* ss = nullptr;
     QFuture<void> future;
@@ -881,6 +899,37 @@ void MainWindow::on_connectClicked()
     return;
 fail: // LCA: remote 'fail' label :/
     delete vpninfo;
+}
+
+void MainWindow::chooseGateway(bool automatic)
+{
+    if (m_choosingGateway || cmd_fd != INVALID_SOCKET || futureWatcher.isRunning()) {
+        QMessageBox::information(this, tr("Choose VPN server"), tr("Disconnect the current VPN before probing servers."));
+        return;
+    }
+    QList<GatewayCandidate> candidates;
+    for (int i = 0; i < ui->serverList->count(); ++i) {
+        QString name = ui->serverList->itemText(i);
+        StoredServer server;
+        if (server.load(name) != 0)
+            candidates.append({name, GatewayProbe::gatewayUrl(server.get_server_gateway()), !server.get_proxy()});
+    }
+    if (candidates.isEmpty()) {
+        QMessageBox::information(this, tr("Choose VPN server"), tr("Create server profiles first, or turn off automatic selection to connect to a new gateway."));
+        return;
+    }
+    GatewayDialog dialog(candidates, automatic, this);
+    {
+        QScopedValueRollback<bool> choosing(m_choosingGateway, true);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+    }
+    const int index = ui->serverList->findText(dialog.selectedProfile());
+    if (index < 0)
+        return;
+    ui->serverList->setCurrentIndex(index);
+    QScopedValueRollback<bool> selected(m_selectedGateway, true);
+    on_connectClicked();
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)

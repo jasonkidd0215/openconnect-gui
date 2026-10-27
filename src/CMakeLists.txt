@@ -6,6 +6,8 @@ set_property(SOURCE timestamp.cpp PROPERTY SKIP_AUTOGEN ON)
 set(${PROJECT_NAME}_SRCS
     openconnect-gui.qrc
     cert.cpp
+    gatewayprobe.cpp
+    dialog/GatewayDialog.cpp
     common.h
     config.h.in
     cryptdata.cpp

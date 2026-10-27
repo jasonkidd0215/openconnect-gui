@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.16)
+project(gateway-probe-tests LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_AUTOMOC ON)
+find_package(Qt6 REQUIRED COMPONENTS Core Network Test Widgets)
+enable_testing()
+add_executable(gateway-probe-test gatewayprobe_test.cpp ../src/gatewayprobe.cpp
+    ../src/dialog/GatewayDialog.cpp)
+target_include_directories(gateway-probe-test PRIVATE ../src)
+target_link_libraries(gateway-probe-test PRIVATE Qt6::Core Qt6::Network Qt6::Test Qt6::Widgets)
+add_test(NAME gateway-probe COMMAND gateway-probe-test)
+set_tests_properties(gateway-probe PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
