@@ -530,7 +530,9 @@ int VpnInfo::connect()
     openconnect_disable_dtls(vpninfo);
 #endif
 
-    //disable DTLS early on if specified on profile
+#ifndef _WIN32
+    // Windows already enforces TLS above; disabling DTLS twice returns EINVAL.
+    // On other platforms follow the profile preference.
     if (this->ss->get_disable_udp() == true) {
         ret = openconnect_disable_dtls(vpninfo);
         if (ret != 0) {
@@ -538,6 +540,7 @@ int VpnInfo::connect()
             return ret;
         }
     }
+#endif
 
     cert_file = ss->get_cert_file();
     ca_file = ss->get_ca_cert_file();
