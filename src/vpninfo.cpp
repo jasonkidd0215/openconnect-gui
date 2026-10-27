@@ -483,7 +483,9 @@ VpnInfo::VpnInfo(QString name, StoredServer* ss, MainWindow* m)
     //openconnect_set_protocol() checks the token with UTF8CHECK
     openconnect_set_protocol(vpninfo, ss->get_protocol_name().toUtf8().data());
 
+#ifndef _WIN32
     openconnect_set_setup_tun_handler(vpninfo, setup_tun_vfn);
+#endif
 }
 
 VpnInfo::~VpnInfo()
@@ -491,6 +493,10 @@ VpnInfo::~VpnInfo()
     if (vpninfo != nullptr) {
         openconnect_vpninfo_free(vpninfo);
     }
+#ifdef _WIN32
+    if (!network.cleanup())
+        Logger::instance().addMessage(network.error);
+#endif
 
     delete ss;
 }
@@ -511,6 +517,18 @@ int VpnInfo::connect()
     int ret;
     QString cert_file, key_file;
     QString ca_file;
+#ifdef _WIN32
+    if (ss->get_proxy() || ss->get_protocol_name() != "anyconnect") {
+        last_err = "This Windows build supports direct AnyConnect/OpenConnect profiles only.";
+        return -1;
+    }
+    if (!network.prepare()) {
+        last_err = network.error;
+        return -1;
+    }
+    openconnect_disable_ipv6(vpninfo);
+    openconnect_disable_dtls(vpninfo);
+#endif
 
     //disable DTLS early on if specified on profile
     if (this->ss->get_disable_udp() == true) {
@@ -563,6 +581,18 @@ int VpnInfo::connect()
         return ret;
     }
 
+#ifdef _WIN32
+    const struct oc_ip_info* info = nullptr;
+    if (openconnect_get_ip_info(vpninfo, &info, nullptr, nullptr) != 0 || !info || !info->addr || !info->gateway_addr) {
+        last_err = "Missing IPv4 tunnel or gateway address.";
+        return -1;
+    }
+    ret = openconnect_setup_tun_device(vpninfo, nullptr, "KABENEKO-VPN");
+    if (ret != 0 || !network.configure(QString::fromUtf8(info->addr), QString::fromUtf8(info->gateway_addr))) {
+        last_err = ret ? "Wintun creation failed." : network.error;
+        return -1;
+    }
+#else
     if (this->ss->get_disable_udp() != true) {
         ret = openconnect_setup_dtls(vpninfo, ss->get_dtls_reconnect_timeout());
 
@@ -580,6 +610,7 @@ int VpnInfo::connect()
             return ret;
         }
     }
+#endif
 
     return 0;
 }

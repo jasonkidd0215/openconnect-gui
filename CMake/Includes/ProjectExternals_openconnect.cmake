@@ -95,11 +95,11 @@ set_property(TARGET openconnect::gnutls PROPERTY IMPORTED_LOCATION ${CMAKE_BINAR
 set_property(TARGET openconnect::gnutls PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libgnutls.dll.a)
 
 add_library(openconnect::hogweed SHARED IMPORTED)
-set_property(TARGET openconnect::hogweed PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libhogweed-4.dll)
+set_property(TARGET openconnect::hogweed PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libhogweed-6.dll)
 set_property(TARGET openconnect::hogweed PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libhogweed.dll.a)
 
 add_library(openconnect::nettle SHARED IMPORTED)
-set_property(TARGET openconnect::nettle PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libnettle-6.dll)
+set_property(TARGET openconnect::nettle PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libnettle-8.dll)
 set_property(TARGET openconnect::nettle PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libnettle.dll.a)
 
 add_library(openconnect::openconnect SHARED IMPORTED)
@@ -115,7 +115,7 @@ set_property(TARGET openconnect::stoken PROPERTY IMPORTED_LOCATION ${CMAKE_BINAR
 set_property(TARGET openconnect::stoken PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libstoken.dll.a)
 
 add_library(openconnect::xml2 SHARED IMPORTED)
-set_property(TARGET openconnect::xml2 PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libxml2-2.dll)
+set_property(TARGET openconnect::xml2 PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libxml2-16.dll)
 set_property(TARGET openconnect::xml2 PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libxml2.dll.a)
 
 add_library(openconnect::wintun SHARED IMPORTED)

@@ -1,0 +1,49 @@
+name: Windows portable build
+on: [push, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: git base-devel autotools unzip zip p7zip
+      - name: Build OpenConnect dependencies
+        run: bash contrib/build_deps_mingw@msys2.sh
+      - name: Build and install GUI
+        run: |
+          export BUILD_TYPE=Release
+          export TARGET=install
+          export EXTRA_BUILD_OPTS="-DCMAKE_INSTALL_PREFIX=$PWD/dist"
+          bash contrib/build_mingw@msys2.sh
+      - name: Test gateway selection on Windows
+        run: |
+          cmake -S tests -B build-tests -G 'MinGW Makefiles'
+          cmake --build build-tests --parallel 2
+          QT_QPA_PLATFORM=offscreen ctest --test-dir build-tests --output-on-failure
+      - name: Bundle Python network runtime
+        run: |
+          curl --fail --location --retry 3 --output python-embed.zip https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip
+          mkdir -p dist/python
+          unzip -q python-embed.zip -d dist/python
+          printf '\n../network\n' >> dist/python/python312._pth
+          cp docs/windows-portable.md dist/README.md
+          cd dist
+          sha256sum openconnect-gui.exe > SHA256SUMS.txt
+          cd ..
+          7z a -tzip OpenConnect-GUI-Auto-Windows.zip ./dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenConnect-GUI-Auto-Windows
+          path: OpenConnect-GUI-Auto-Windows.zip
+          retention-days: 14
