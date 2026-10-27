@@ -41,7 +41,7 @@ jobs:
           cd dist
           sha256sum openconnect-gui.exe > SHA256SUMS.txt
           cd ..
-          7z a -tzip OpenConnect-GUI-Auto-Windows.zip ./dist/*
+          7za a -tzip OpenConnect-GUI-Auto-Windows.zip ./dist/*
       - uses: actions/upload-artifact@v4
         with:
           name: OpenConnect-GUI-Auto-Windows
