@@ -22,6 +22,7 @@
 #include <QString>
 #include <QUrl>
 #include "common.h"
+#include "windowsnetwork.h"
 
 class MainWindow;
 class StoredServer;
@@ -56,5 +57,6 @@ public:
     QByteArray generateUniqueInterfaceName();
 
 private:
+    WindowsNetwork network;
     SOCKET cmd_fd;
 };

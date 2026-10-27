@@ -74,7 +74,7 @@ pacman --needed --noconfirm -S \
     base-devel \
     autotools \
     mingw-w64-x86_64-toolchain \
-    mingw-w64-x86_64-jq \
+    jq \
     mingw-w64-${BUILD_ARCH}-gcc \
     mingw-w64-${BUILD_ARCH}-make \
     mingw-w64-${BUILD_ARCH}-gnutls \
@@ -142,6 +142,12 @@ set +e
 git clean -fdx
 git reset --hard ${OC_TAG}
 
+# Recent mingw-w64 merged secure CRT declarations into stdlib.h.
+# OpenConnect 9.12 still includes the removed compatibility header.
+if [ ! -f "${MINGW_PREFIX}/include/sec_api/stdlib_s.h" ]; then
+    sed -i '/#include <sec_api\/stdlib_s.h>/d' compat.c
+fi
+
 set -e
 echo "hash:"
 git rev-parse --short HEAD | tee ../openconnect-${OC_TAG}_$MSYSTEM.hash
@@ -193,18 +199,18 @@ cp ${MINGW_PREFIX}/bin/libffi-8.dll .
 cp ${MINGW_PREFIX}/bin/libgcc_*-1.dll .
 cp ${MINGW_PREFIX}/bin/libgmp-10.dll .
 cp ${MINGW_PREFIX}/bin/libgnutls-30.dll .
-cp ${MINGW_PREFIX}/bin/libhogweed-6.dll .
+cp ${MINGW_PREFIX}/bin/libhogweed-*.dll .
 cp ${MINGW_PREFIX}/bin/libintl-8.dll .
-cp ${MINGW_PREFIX}/bin/libnettle-8.dll .
+cp ${MINGW_PREFIX}/bin/libnettle-*.dll .
 cp ${MINGW_PREFIX}/bin/libp11-kit-0.dll .
 cp ${MINGW_PREFIX}/bin/libtasn1-6.dll .
 cp ${MINGW_PREFIX}/bin/libwinpthread-1.dll .
-cp ${MINGW_PREFIX}/bin/libxml2-16.dll .
+cp ${MINGW_PREFIX}/bin/libxml2-*.dll .
 cp ${MINGW_PREFIX}/bin/zlib1.dll .
 cp ${MINGW_PREFIX}/bin/libstoken-1.dll .
 cp ${MINGW_PREFIX}/bin/liblz4.dll .
 cp ${MINGW_PREFIX}/bin/libiconv-2.dll .
-cp ${MINGW_PREFIX}/bin/libunistring-5.dll .
+cp ${MINGW_PREFIX}/bin/libunistring-*.dll .
 cp ${MINGW_PREFIX}/bin/libidn2-0.dll .
 cp ${MINGW_PREFIX}/bin/liblzma-5.dll .
 cp ${MINGW_PREFIX}/bin/libbrotlicommon.dll .

@@ -1,0 +1,24 @@
+name: Build and probe tests
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build qt6-base-dev qt6-scxml-dev libopenconnect-dev libgnutls28-dev libspdlog-dev
+      - name: Configure application
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build application
+        run: cmake --build build --parallel 2
+      - name: Configure probe tests
+        run: cmake -S tests -B build-tests -G Ninja
+      - name: Build probe tests
+        run: cmake --build build-tests --parallel 2
+      - name: Run probe tests
+        run: ctest --test-dir build-tests --output-on-failure

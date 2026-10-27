@@ -115,6 +115,11 @@ private slots:
     void checkForUpdatesDialog();
 
 private:
+    void chooseGateway(bool automatic);
+    void importGateways();
+    bool m_choosingGateway = false;
+    bool m_selectedGateway = false;
+    QAction* m_autoGatewayAction = nullptr;
     void gotLatestVersion(QNetworkReply *reply);
     void checkLatestVersion() const;
 

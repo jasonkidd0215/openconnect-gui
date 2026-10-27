@@ -42,7 +42,7 @@ pacman --needed --noconfirm -S \
 	zip \
 	unzip \
 	coreutils \
-	mingw-w64-x86_64-jq \
+	jq \
 	mingw-w64-x86_64-curl
 
 if [ -z "$QT6" ];then

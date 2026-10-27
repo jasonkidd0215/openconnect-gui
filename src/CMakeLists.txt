@@ -6,6 +6,9 @@ set_property(SOURCE timestamp.cpp PROPERTY SKIP_AUTOGEN ON)
 set(${PROJECT_NAME}_SRCS
     openconnect-gui.qrc
     cert.cpp
+    gatewayprobe.cpp
+    windowsnetwork.cpp
+    dialog/GatewayDialog.cpp
     common.h
     config.h.in
     cryptdata.cpp
@@ -185,6 +188,12 @@ install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION . COMPONENT App
     LIBRARY DESTINATION . COMPONENT App
 )
+if(WIN32)
+    install(FILES
+        ${CMAKE_SOURCE_DIR}/contrib/windows-network/route_broker.py
+        ${CMAKE_SOURCE_DIR}/contrib/windows-network/vpn_network.py
+        DESTINATION network COMPONENT App)
+endif()
 
 # fixup the bundle
 get_target_property(QT_LIBRARY_DIR Qt6::Core LOCATION)

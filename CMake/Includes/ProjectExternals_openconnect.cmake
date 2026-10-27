@@ -94,12 +94,22 @@ add_library(openconnect::gnutls SHARED IMPORTED)
 set_property(TARGET openconnect::gnutls PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libgnutls-30.dll)
 set_property(TARGET openconnect::gnutls PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libgnutls.dll.a)
 
+execute_process(COMMAND ${CMAKE_COMMAND} -E tar tf
+    ${OPENCONNECT_URL}/openconnect-${openconnect-TAG}_${MINGW_VARIANT}.zip
+    OUTPUT_VARIABLE OPENCONNECT_ARCHIVE_FILES COMMAND_ERROR_IS_FATAL ANY)
+foreach(DLL_NAME hogweed nettle xml2)
+    string(REGEX MATCH "lib${DLL_NAME}-[0-9]+[.]dll" DLL_${DLL_NAME} "${OPENCONNECT_ARCHIVE_FILES}")
+    if(NOT DLL_${DLL_NAME})
+        message(FATAL_ERROR "Missing ${DLL_NAME} DLL in OpenConnect archive")
+    endif()
+endforeach()
+
 add_library(openconnect::hogweed SHARED IMPORTED)
-set_property(TARGET openconnect::hogweed PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libhogweed-4.dll)
+set_property(TARGET openconnect::hogweed PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/${DLL_hogweed})
 set_property(TARGET openconnect::hogweed PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libhogweed.dll.a)
 
 add_library(openconnect::nettle SHARED IMPORTED)
-set_property(TARGET openconnect::nettle PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libnettle-6.dll)
+set_property(TARGET openconnect::nettle PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/${DLL_nettle})
 set_property(TARGET openconnect::nettle PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libnettle.dll.a)
 
 add_library(openconnect::openconnect SHARED IMPORTED)
@@ -115,7 +125,7 @@ set_property(TARGET openconnect::stoken PROPERTY IMPORTED_LOCATION ${CMAKE_BINAR
 set_property(TARGET openconnect::stoken PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libstoken.dll.a)
 
 add_library(openconnect::xml2 SHARED IMPORTED)
-set_property(TARGET openconnect::xml2 PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/libxml2-2.dll)
+set_property(TARGET openconnect::xml2 PROPERTY IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/bin/${DLL_xml2})
 set_property(TARGET openconnect::xml2 PROPERTY IMPORTED_IMPLIB ${CMAKE_BINARY_DIR}/external/lib/libxml2.dll.a)
 
 add_library(openconnect::wintun SHARED IMPORTED)
