@@ -142,6 +142,12 @@ set +e
 git clean -fdx
 git reset --hard ${OC_TAG}
 
+# Recent mingw-w64 merged secure CRT declarations into stdlib.h.
+# OpenConnect 9.12 still includes the removed compatibility header.
+if [ ! -f "${MINGW_PREFIX}/include/sec_api/stdlib_s.h" ]; then
+    sed -i '/#include <sec_api\/stdlib_s.h>/d' compat.c
+fi
+
 set -e
 echo "hash:"
 git rev-parse --short HEAD | tee ../openconnect-${OC_TAG}_$MSYSTEM.hash
