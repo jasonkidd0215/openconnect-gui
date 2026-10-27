@@ -20,6 +20,13 @@
 #include "mainwindow.h"
 #include "GatewayDialog.h"
 #include <QScopedValueRollback>
+#include <QMenuBar>
+#include <QFileDialog>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QHostAddress>
+#include <QSet>
 #include "NewProfileDialog.h"
 #include "config.h"
 #include "editdialog.h"
@@ -110,6 +117,8 @@ MainWindow::MainWindow(QWidget* parent, bool useTray, const QString profileName)
     });
     auto* chooseAction = gatewayMenu->addAction(tr("Probe and choose server..."));
     connect(chooseAction, &QAction::triggered, this, [this]() { chooseGateway(false); });
+    auto* importAction = gatewayMenu->addAction(tr("Import server list (JSON)..."));
+    connect(importAction, &QAction::triggered, this, &MainWindow::importGateways);
 
     connect(ui->viewLogButton, &QPushButton::clicked,
         this, &MainWindow::createLogDialog);
@@ -911,7 +920,7 @@ void MainWindow::chooseGateway(bool automatic)
     for (int i = 0; i < ui->serverList->count(); ++i) {
         QString name = ui->serverList->itemText(i);
         StoredServer server;
-        if (server.load(name) != 0)
+        if (server.load(name) > 0)
             candidates.append({name, GatewayProbe::gatewayUrl(server.get_server_gateway()), !server.get_proxy()});
     }
     if (candidates.isEmpty()) {
@@ -930,6 +939,56 @@ void MainWindow::chooseGateway(bool automatic)
     ui->serverList->setCurrentIndex(index);
     QScopedValueRollback<bool> selected(m_selectedGateway, true);
     on_connectClicked();
+}
+
+void MainWindow::importGateways()
+{
+    if (m_choosingGateway || cmd_fd != INVALID_SOCKET || futureWatcher.isRunning()) {
+        QMessageBox::information(this, tr("Import servers"), tr("Disconnect before importing profiles."));
+        return;
+    }
+    const QString path = QFileDialog::getOpenFileName(this, tr("Import server list"), {}, tr("JSON files (*.json)"));
+    if (path.isEmpty())
+        return;
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly) || file.size() > 1024 * 1024) {
+        QMessageBox::warning(this, tr("Import servers"), tr("Cannot read file, or it exceeds 1 MiB."));
+        return;
+    }
+    QJsonParseError error;
+    const auto document = QJsonDocument::fromJson(file.readAll(), &error);
+    if (error.error != QJsonParseError::NoError || !document.isArray()
+        || document.array().isEmpty() || document.array().size() > 256) {
+        QMessageBox::warning(this, tr("Import servers"), tr("Expected a JSON array containing 1 to 256 entries with city and ip fields."));
+        return;
+    }
+    QList<GatewayCandidate> entries;
+    QSet<QString> names;
+    for (const auto& value : document.array()) {
+        const auto entry = value.toObject();
+        const QString city = entry.value("city").toString().trimmed();
+        QHostAddress address(entry.value("ip").toString());
+        if (city.isEmpty() || city.size() > 80 || city.contains('/') || city.contains('\\')
+            || city.contains('\n') || city.contains('\r') || address.protocol() != QAbstractSocket::IPv4Protocol) {
+            QMessageBox::warning(this, tr("Import servers"), tr("Invalid city or IPv4 address. No profiles were imported."));
+            return;
+        }
+        const QString name = city + " - " + address.toString();
+        if (!names.contains(name) && ui->serverList->findText(name) < 0) {
+            entries.append({name, GatewayProbe::gatewayUrl(address.toString()), true});
+            names.insert(name);
+        }
+    }
+    for (const auto& entry : entries) {
+        StoredServer server;
+        server.set_label(entry.name);
+        server.set_server_gateway(entry.url.toString());
+        server.set_protocol_name("anyconnect");
+        server.set_token_type(0);
+        server.save();
+    }
+    reload_settings();
+    QMessageBox::information(this, tr("Import servers"), tr("Imported %1 new profiles. Existing profiles were preserved. Credentials and certificates were not imported.").arg(entries.size()));
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)

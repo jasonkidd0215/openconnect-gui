@@ -25,6 +25,12 @@ a working connection in the background. Existing upstream authentication behavio
 within the chosen profile is unchanged.
 
 No provider membership data or private server inventory is included in this fork.
+Use **Servers > Import server list (JSON)** to import a local array such as
+`[{"city":"Example", "ip":"192.0.2.1"}]`. Import accepts up to 256 IPv4 entries,
+does not overwrite existing profile names, and imports neither passwords nor
+certificate trust. Set the username using the normal profile editor, and verify
+the certificate during the first connection. Keep actual provider inventories
+outside this public repository.
 
 ## Validation
 
